@@ -1,0 +1,283 @@
+"id","creation_date","title","body","comments","accepted_answer_id","answers","favorite_count","owner_display_name","user_id","parent_id","post_type_id","score","tags","views"
+"46158875","2017-09-11 15:06:38.080","How to check whether two lists items have value equality using EqualityComparer?","<p>I have an <code>Account</code> class:</p>
+
+<pre><code>class Account
+{
+    List&lt;Contact&gt; Contacts;
+
+    // other properties, constructor, etc.
+}
+</code></pre>
+
+<p>Using Visual Studio Community 2017, when opening the quick actions menu for this class, I can choose ""<strong><em>Generate Equals(object)</em></strong>"".</p>
+
+<p>Here is the generated <code>Equals</code>:</p>
+
+<pre><code>public override bool Equals(object obj)
+{
+    var account = obj as Account;
+    return account != null &amp;&amp;
+           EqualityComparer&lt;List&lt;Contact&gt;&gt;.Default.Equals(Contacts, account.Contacts) &amp;&amp;
+            // checking equality for other properties
+}
+</code></pre>
+
+<p>When I try to pass an account with the same list of contacts (same values), the method returns false.</p>
+
+<p>Digging a little bit, I found that the problem is in this line:</p>
+
+<pre><code>EqualityComparer&lt;List&lt;Contact&gt;&gt;.Default.Equals(Contacts, account.Contacts)
+</code></pre>
+
+<p>So if for example, I pass the following lists, the above expression will be <code>false</code>.</p>
+
+<pre><code>var a = new List&lt;Contact&gt;(new Contact(""Michael""), new Contact(""John"")); 
+var b = new List&lt;Contact&gt;(new Contact(""Michael""), new Contact(""John""));
+</code></pre>
+
+<p>And that is understandable since the two lists have different references. How could I change it so it will check for value equality inside the list?</p>
+
+<p><strong>Note:</strong> <code>Contact</code> overrides <code>Equals</code> to check for value equality, so checking equality for two different instances of <code>new Contact(""Michael"")</code> returns <code>true</code>.</p>
+
+<hr>
+
+<p><strong>Edit:</strong> If I was not clear, I want the items of the lists to have value equality regardless of their order.</p>
+","11",,"0",,,"1925272",,"1","0","|c#|list|equals|","48"
+"46129822","2017-09-09 10:45:07.347",,"<p>You could reduce it to another array, pushing to it while sorting the values starting from first index. </p>
+
+<p><div class=""snippet"" data-lang=""js"" data-hide=""false"" data-console=""true"" data-babel=""true"">
+<div class=""snippet-code"">
+<pre class=""snippet-code-js lang-js prettyprint-override""><code>let arr = [
+  [""Date"", ""01/02/2017"", ""02/02/2016""],
+  [""Temperature"", ""19"", ""16""],
+  [""Humidity"", ""80%"", ""86%""]
+];
+
+function getISO(d) {
+  return d.replace(/(..)\/(..)\/(....)/, '$3-$2-$1');
+}
+let m = arr.reduce((a, b) =&gt; {
+  let [n, ...rest] = b;
+  if (n === 'Date') {
+    rest.sort((x, y) =&gt; Date.parse(getISO(x)) - Date.parse(getISO(y)));
+  } else {
+    rest.sort((x, y) =&gt; parseInt(x) - parseInt(y));
+  }
+  a.push([n, ...rest]);
+  return a;
+}, []);
+console.log(m);</code></pre>
+</div>
+</div>
+</p>
+
+<p>I took <a href=""https://stackoverflow.com/a/46129854/3993662"">Nina's</a> <code>getISO</code> method to make the <code>Date.parse</code> work correctly in every environment.</p>
+","3",,,,,"3993662","46129612","2","1",,
+"46129823","2017-09-09 10:45:12.323","Why does my DropDownList not populate with Items from the Page_Load event?","<p>I have this control to fetch some data: </p>
+
+<pre><code>&lt;asp:DropDownList ID=""newsOrEvent"" runat=""server"" Text='&lt;%# Eval(""newsEvent"") %&gt;'&gt;&lt;/asp:DropDownList&gt;
+</code></pre>
+
+<p>Then in my Page_Load I have: </p>
+
+<pre><code>protected void Page_Load(object sender, EventArgs e)
+        {
+
+            newsOrEvent.Items.clear();
+            newsOrEvent.Items.Add(""News"");
+            newsOrEvent.Items.Add(""Event"");
+
+                    if (!this.IsPostBack)
+                    {
+                        if(newsID != 0) 
+                        {
+                            this.BindRepeater();
+                           // this.BindImageRepeater();
+
+                        }   
+
+                    }
+
+
+        }
+</code></pre>
+
+<p>My compiler is saying:  The name 'newsOrEvent' does not exist in the current context</p>
+
+<pre><code>private void BindRepeater()
+        {
+                using (SqlConnection con = new SqlConnection(constr))
+                {
+                string myQuery = string.Format(""SELECT * FROM tblNewsEvents WHERE newsID = {0}"", newsID);
+
+
+                     using (SqlCommand cmd = new SqlCommand(myQuery, con))
+                     {
+                        using (SqlDataAdapter sda = new SqlDataAdapter(cmd))
+                        {
+                            DataTable dt = new DataTable();
+                            sda.Fill(dt);
+                            news.DataSource = dt;
+                            news.DataBind();
+                        }
+                    }
+                }
+            }
+</code></pre>
+
+<p>This SO article <a href=""https://stackoverflow.com/questions/14654220/has-a-selectedvalue-which-is-invalid-because-it-does-not-exist-in-the-list-of-it"">here</a> suggested:</p>
+
+<ul>
+<li>I should <code>.clear</code> the items first</li>
+<li>Enter the <code>&lt;%# Eval(""newsEvent"") %&gt;</code> by itself to see if it loads in the page, which it does. </li>
+</ul>
+
+<p>It also said: </p>
+
+<blockquote>
+  <p>If the dropdown controls Text property is assigned with any value before assigning the datasource, this error will occur.</p>
+</blockquote>
+
+<p>How can I add the items first, before it reads the Eval?</p>
+
+<p>I can not see why a <code>DropDownList</code> does not populate.</p>
+","8",,"1",,,"7459899",,"1","0","|c#|asp.net|webforms|","1386"
+"46129828","2017-09-09 10:45:31.273",,"<p>What you are doing is replaces the root view controller with subVC. If you want to retain mainNavigationVC and only to change its' root to subVC, do as follows</p>
+
+<pre><code>let mainStoryboard: UIStoryboard = UIStoryboard(name: ""Main"", bundle: nil)
+let innerPage: subVC = mainStoryboard.instantiateViewController(withIdentifier: ""subSB"") as! subVC
+let mainNav: mainNavigationVC = mainNavigationVC(rootViewController: innerPage)
+
+let appDelegate = UIApplication.shared.delegate as! AppDelegate
+appDelegate.window?.rootViewController = mainNav
+</code></pre>
+","0",,,,,"2419701","46129673","2","1",,
+"46158876","2017-09-11 15:06:39.923","What exactly does this Azure error mean?","<p>I have a PowerShell script that deploys an ARM template to Azure, but I have encountered an error that I can't quite seem to wrap my head around. When running in PowerShell, itself, I get the following error: </p>
+
+<blockquote>
+  <p>New-AzureRmResourceGroupDeployment : 7:46:01 AM - Error:
+  Code=CannotUpdatePlan; Message=Resource plan can not be changed.</p>
+</blockquote>
+
+<p>The error description doesn't seem all that complicated, but I'm not sure why this is the case in the first place. I don't have any locks on the Resource Group, resources, or subscription so it should theoretically be able to work properly, right?</p>
+
+<p>Upon testing in VSTS, I got the error mentioned above <em>along with</em> the following error message preceding it: </p>
+
+<blockquote>
+  <p>Selected subscription is in 'Disabled' state.</p>
+</blockquote>
+
+<p>I'm not sure if that has to do with the other, but I know the subscription is active as I can deploy resources to it, manually. Also, it clearly says ""Active"" when viewing the subscription from the portal.</p>
+","4","46166529","1",,,"8201465",,"1","2","|powershell|azure|azure-devops|azure-web-app-service|cleardb|","831"
+"46158877","2017-09-11 15:06:40.903",,"<p>Javatar's answer didn't solve my specific case but here is what helped me in case it helps anyone.</p>
+
+<pre><code>private List&lt;MyClass&gt; selectMyClassByDate(Date date) {
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery&lt;MyClass&gt; cq = cb.createQuery(MyClass.class);
+    Root&lt;MyClass&gt; myClass = cq.from(MyClass.class);
+    cq.select(myClass);
+    cq.where(cb.equal(cb.function(""date"", Date.class,
+        myClass.get(MyClass_.timestamp)), date));
+    final TypedQuery&lt;MyClass&gt; tq = em.createQuery(cq);
+    log.fine(
+        tq.unwrap(org.apache.openjpa.persistence.QueryImpl.class)
+            .getQueryString());
+    List&lt;MyClass&gt; myClassList = tq.getResultList();
+    return myClassList;
+}
+</code></pre>
+
+<p>sorry this only applies to MYSQL</p>
+","0",,,,,"3052312","41030148","2","2",,
+"46158879","2017-09-11 15:06:47.263",,"<p>Once you merged:</p>
+
+<pre><code>M &lt;- merge(A, B[,c(1,3)], by=""date"")
+</code></pre>
+
+<p>You can perform </p>
+
+<pre><code>reg &lt;- lm(M$vision ~ M$dust)
+</code></pre>
+
+<p>If you don't do that, you can't except the model to find the merging key by himself....</p>
+","0",,,,,"5227259","46154526","2","0",,
+"46158880","2017-09-11 15:06:49.110","jqGrid search by textbox at click in a button","<p>I want to search by clicking a button ""Buscar"", pass text ""teeeeeext"" and ""ALTA"" to search in function ""Buscar Index"" and then reload the jqGrid to show the result of search with the parameters.</p>
+
+<p>My page:
+<a href=""https://i.stack.imgur.com/10bun.jpg"" rel=""nofollow noreferrer""><img src=""https://i.stack.imgur.com/10bun.jpg"" alt=""screen grid""></a></p>
+
+<p>My code to load the jqGrid:
+<div class=""snippet"" data-lang=""js"" data-hide=""false"" data-console=""true"" data-babel=""false"">
+<div class=""snippet-code"">
+<pre class=""snippet-code-js lang-js prettyprint-override""><code>$(""#jqGrid"").jqGrid({
+            url: '@Url.Action(""BuscarIndex"")',
+                    styleUI: 'Bootstrap',
+                    responsive:true,
+                    datatype: ""json"",
+                    colModel: [
+                        { label: 'Id', name: 'Id', width: 30, key: true, hidden: true, sortable: false },
+                        { label: 'Clave', name: 'Clave', width: 30, sortable: false,align: 'right' },
+                        { label: 'Nombre', name: 'NombreCompleto', width: 150, sortable: false },
+                        { label: 'Perfil', name: 'Perfil.Nombre', width: 150, sortable: false },
+                        { label: 'Estatus', name: 'Estatus', width: 45, sortable: false,align: 'center', formatter: formatEstatus },
+                        { label: 'Modificar', name: '', width: 45, sortable: false, align: 'center', formatter: formatModif },
+                    ],
+                    width: 800,
+                    height: 250,
+                    viewrecords: true,
+                    rowNum: 20,
+                    pager: ""#jqGridPager""
+        });</code></pre>
+<pre class=""snippet-code-css lang-css prettyprint-override""><code>public JsonResult BuscarIndex(string sidx, string sord, int page, int rows,bool _search,string searchField,string searchOper,string searchString)
+        {                       
+            //SEARCH 
+            return Json(resultadoGridBT,JsonRequestBehavior.AllowGet);
+        }</code></pre>
+<pre class=""snippet-code-html lang-html prettyprint-override""><code>&lt;div class=""form-group""&gt;        
+        @Html.LabelFor(model =&gt; model.Buscar, htmlAttributes: new { @class = ""control-label col-md-1"" })
+        &lt;div class=""col-md-3""&gt;
+            @Html.EditorFor(model =&gt; model.Buscar, new { htmlAttributes = new { @class = ""form-control"" } })
+            @Html.ValidationMessageFor(model =&gt; model.Buscar, """", new { @class = ""text-danger"" })
+        &lt;/div&gt;
+
+        @Html.LabelFor(model =&gt; model.Estatus, htmlAttributes: new { @class = ""control-label col-md-1"" })
+        &lt;div class=""col-md-2""&gt;
+            @Html.DropDownList(""Estatus"", null, ""(TODOS)"", new { @class = ""form-control"" })
+            @Html.ValidationMessageFor(model =&gt; model.Estatus, """", new { @class = ""text-danger"" })
+        &lt;/div&gt;
+        &lt;button id=""buscar"" type=""button"" class=""btn btn-default""&gt;Buscar&lt;/button&gt;
+    &lt;/div&gt;        
+        &lt;div class=""col-md-12""&gt;
+            &lt;table id=""jqGrid""&gt;&lt;/table&gt;
+            &lt;div id=""jqGridPager""&gt;&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class=""form-group""&gt;
+            &lt;div class=""col-md-offset-2 col-md-10""&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;</code></pre>
+</div>
+</div>
+</p>
+","1",,"1",,,"2163437",,"1","0","|asp.net-mvc|jqgrid|","803"
+"46199150","2017-09-13 13:39:34.183",,"<p>The .env file is not committed when we change our server
+you have to copy the example.env file to .env file and then apply the command</p>
+
+<blockquote>
+  <p>php artisan key:generate</p>
+</blockquote>
+
+<p>i hope its will work :)</p>
+","0",,,,,"8531050","46197395","2","0",,
+"46199151","2017-09-13 13:39:41.693",,"<p>It seems the default RE engine sees the Polish characters as punctuation, but the Perl one doesn't.</p>
+
+<pre><code>gsub(""[[:punct:]]"", """", textToClean)
+[1] ""polish letters     ź Ź   ę Ę ó Ó ń Ń ć Ć 43434   ""
+
+gsub(""[[:punct:]]"", """", textToClean, perl=TRUE)
+[1] ""polish letters ł Ł ż Ż ź Ź ą Ą ę Ę ó Ó ń Ń ć Ć 43434   ""
+</code></pre>
+
+<p>I'd classify it as a bug in the default engine.</p>
+","0",,,,,"269476","46198290","2","2",,
